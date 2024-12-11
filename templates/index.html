@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Predicción de Imagen</title>
+</head>
+<body>
+    <h1>Predicción de Imagen</h1>
+
+    <!-- Formulario para cargar una imagen desde la computadora -->
+    <h3>Sube una imagen para predecir:</h3>
+    <form method="POST" enctype="multipart/form-data">
+        <input type="file" name="file" accept="image/*">
+        <button type="submit">Predecir</button>
+    </form>
+
+    <!-- Botón para activar la cámara -->
+    <h3>O usa la cámara para predecir:</h3>
+    <button onclick="startCamera()">Prender cámara</button>
+    <div id="camera-preview" style="display:none;">
+        <video id="video" width="640" height="480" autoplay></video>
+        <button onclick="takeSnapshot()">Tomar foto</button>
+    </div>
+
+    
+    {% if prediction %}
+        <h2>Resultado de la Predicción:</h2>
+        <p>La predicción es: <strong>{{ prediction }}</strong></p>
+    {% endif %}
+
+   
+    <br>
+    <a href="/">Volver a intentar</a>
+
+    <script>
+        function startCamera() {
+            document.getElementById('camera-preview').style.display = 'block';
+            const video = document.getElementById('video');
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                navigator.mediaDevices.getUserMedia({ video: true })
+                    .then(function (stream) {
+                        video.srcObject = stream;
+                    })
+                    .catch(function (error) {
+                        console.log("Error al acceder a la cámara:", error);
+                    });
+            }
+        }
+
+        function takeSnapshot() {
+            const video = document.getElementById('video');
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0);
+
+            
+            const imageData = canvas.toDataURL('image/jpeg');
+
+        
+            fetch('/predict', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ image: imageData })
+            })
+            .then(response => response.json())
+            .then(data => {
+             
+                alert('La predicción es: ' + data.prediction);
+            })
+            .catch(error => {
+                console.error('Error al enviar la imagen:', error);
+            });
+        }
+    </script>
+</body>
+</html>
